@@ -23,6 +23,71 @@ class SharedController extends Controller
         ]);
     }
 
+    public function getBranches(Request $request)
+    {
+        $companyId = $request->user()->company_id;
+        $branches = Branch::where('company_id', $companyId)->get();
+
+        return response()->json(['success' => true, 'data' => $branches]);
+    }
+
+    public function storeBranch(Request $request)
+    {
+        $companyId = $request->user()->company_id;
+
+        $validated = $request->validate([
+            'name' => 'required|string|max:100',
+            'code' => 'required|string|max:20',
+            'city' => 'required|string',
+            'address' => 'required|string',
+            'is_headquarters' => 'boolean',
+        ]);
+
+        $branch = Branch::create(array_merge($validated, [
+            'company_id' => $companyId,
+            'is_headquarters' => $validated['is_headquarters'] ?? false,
+        ]));
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Branch created successfully',
+            'data' => $branch,
+        ], 201);
+    }
+
+    public function updateStatutorySettings(Request $request)
+    {
+        $company = Company::findOrFail($request->user()->company_id);
+
+        $validated = $request->validate([
+            'pension_rate_employee' => 'required|numeric|min:0|max:100',
+            'pension_rate_employer' => 'required|numeric|min:0|max:100',
+            'nhf_rate' => 'required|numeric|min:0|max:100',
+            'vat_rate' => 'required|numeric|min:0|max:100',
+        ]);
+
+        $settings = $company->settings ?? [];
+        $settings = array_merge($settings, $validated);
+
+        $company->update(['settings' => $settings]);
+
+        AuditLog::create([
+            'company_id' => $company->id,
+            'user_id' => $request->user()->id,
+            'user_name' => $request->user()->name,
+            'module' => 'FINANCE',
+            'action' => 'updated_statutory_rates',
+            'details' => "Updated Nigerian statutory deductions: Employee Pension {$validated['pension_rate_employee']}%, NHF {$validated['nhf_rate']}%, VAT {$validated['vat_rate']}%",
+            'ip_address' => $request->ip(),
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Statutory rates updated successfully',
+            'data' => $company,
+        ]);
+    }
+
     public function updateSubscriptionPlan(Request $request)
     {
         $request->validate([

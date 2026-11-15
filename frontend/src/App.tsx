@@ -9,11 +9,16 @@ import { LeaveView } from './components/hrm/LeaveView';
 import { PayrollView } from './components/hrm/PayrollView';
 import { RecruitmentView } from './components/hrm/RecruitmentView';
 import { EssPortalView } from './components/hrm/EssPortalView';
+import { PerformanceView } from './components/hrm/PerformanceView';
+import { ExpensesView } from './components/hrm/ExpensesView';
 import { PipelineView } from './components/crm/PipelineView';
 import { LeadsView } from './components/crm/LeadsView';
 import { AccountsView } from './components/crm/AccountsView';
 import { InvoicesView } from './components/crm/InvoicesView';
 import { HelpdeskView } from './components/crm/HelpdeskView';
+import { ProductsView } from './components/crm/ProductsView';
+import { QuotationsView } from './components/crm/QuotationsView';
+import { CampaignsView } from './components/crm/CampaignsView';
 import { SettingsView } from './components/shared/SettingsView';
 import { AutomationsView } from './components/shared/AutomationsView';
 import { AuditLogsView } from './components/shared/AuditLogsView';
@@ -65,8 +70,8 @@ const MainLayout: React.FC = () => {
               {activeSubmenu === 'payroll' && <PayrollView />}
               {activeSubmenu === 'recruitment' && <RecruitmentView />}
               {activeSubmenu === 'ess' && <EssPortalView />}
-              {activeSubmenu === 'performance' && <EmployeesView />}
-              {activeSubmenu === 'expenses' && <LeaveView />}
+              {activeSubmenu === 'performance' && <PerformanceView />}
+              {activeSubmenu === 'expenses' && <ExpensesView />}
             </>
           )}
 
@@ -78,9 +83,9 @@ const MainLayout: React.FC = () => {
               {activeSubmenu === 'accounts' && <AccountsView />}
               {activeSubmenu === 'invoices' && <InvoicesView />}
               {activeSubmenu === 'tickets' && <HelpdeskView />}
-              {activeSubmenu === 'products' && <AccountsView />}
-              {activeSubmenu === 'quotations' && <InvoicesView />}
-              {activeSubmenu === 'campaigns' && <LeadsView />}
+              {activeSubmenu === 'products' && <ProductsView />}
+              {activeSubmenu === 'quotations' && <QuotationsView />}
+              {activeSubmenu === 'campaigns' && <CampaignsView />}
             </>
           )}
 

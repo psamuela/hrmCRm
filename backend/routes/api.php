@@ -24,6 +24,9 @@ Route::middleware('auth:sanctum')->group(function () {
     // Shared / Core Platform
     Route::get('/companies', [SharedController::class, 'getCompanies']);
     Route::post('/companies/subscription', [SharedController::class, 'updateSubscriptionPlan']);
+    Route::post('/companies/statutory', [SharedController::class, 'updateStatutorySettings']);
+    Route::get('/branches', [SharedController::class, 'getBranches']);
+    Route::post('/branches', [SharedController::class, 'storeBranch']);
     Route::get('/departments', [SharedController::class, 'getDepartments']);
     Route::get('/notifications', [SharedController::class, 'getNotifications']);
     Route::post('/notifications/{id}/read', [SharedController::class, 'markNotificationRead']);
@@ -55,14 +58,17 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // 1.2 Recruitment / ATS
         Route::get('/recruitment', [HrmController::class, 'getRecruitment']);
+        Route::post('/jobs', [HrmController::class, 'storeJobOpening']);
         Route::put('/candidates/{id}/stage', [HrmController::class, 'updateCandidateStage']);
 
         // 1.9 Expenses
         Route::get('/expenses', [HrmController::class, 'getExpenses']);
         Route::post('/expenses', [HrmController::class, 'storeExpense']);
+        Route::put('/expenses/{id}/status', [HrmController::class, 'updateExpenseStatus']);
 
         // 1.6 Performance, 1.7 Trainings, 1.10 Disciplinary
         Route::get('/performance', [HrmController::class, 'getPerformanceReviews']);
+        Route::post('/performance', [HrmController::class, 'storePerformanceReview']);
         Route::get('/trainings', [HrmController::class, 'getTrainings']);
         Route::get('/disciplinary', [HrmController::class, 'getDisciplinaryCases']);
     });
@@ -90,6 +96,7 @@ Route::middleware('auth:sanctum')->group(function () {
         // 2.8 Quotations
         Route::get('/quotations', [CrmController::class, 'getQuotations']);
         Route::post('/quotations', [CrmController::class, 'storeQuotation']);
+        Route::put('/quotations/{id}/status', [CrmController::class, 'updateQuotationStatus']);
 
         // 2.10 Invoices & Payments
         Route::get('/invoices', [CrmController::class, 'getInvoices']);
@@ -105,6 +112,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // 2.13 Campaigns
         Route::get('/campaigns', [CrmController::class, 'getCampaigns']);
+        Route::post('/campaigns', [CrmController::class, 'storeCampaign']);
     });
 
     // AI Engine / Copilot

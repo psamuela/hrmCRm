@@ -131,7 +131,7 @@ class HrmController extends Controller
 
         $attendances = Attendance::with('employee.department')
             ->where('company_id', $companyId)
-            ->where('date', $date)
+            ->whereDate('date', $date)
             ->get();
 
         return response()->json([
@@ -153,7 +153,7 @@ class HrmController extends Controller
         $today = Carbon::today()->toDateString();
         $attendance = Attendance::where('company_id', $user->company_id)
             ->where('employee_id', $employee->id)
-            ->where('date', $today)
+            ->whereDate('date', $today)
             ->first();
 
         if ($attendance && $attendance->clock_in) {
@@ -201,7 +201,7 @@ class HrmController extends Controller
         $today = Carbon::today()->toDateString();
         $attendance = Attendance::where('company_id', $user->company_id)
             ->where('employee_id', $employee->id)
-            ->where('date', $today)
+            ->whereDate('date', $today)
             ->first();
 
         if (!$attendance || !$attendance->clock_in) {
@@ -522,14 +522,109 @@ class HrmController extends Controller
         ], 201);
     }
 
+    public function updateExpenseStatus(Request $request, $id)
+    {
+        $companyId = $request->user()->company_id;
+        $claim = ExpenseClaim::where('company_id', $companyId)->findOrFail($id);
+
+        $request->validate([
+            'status' => 'required|in:approved,rejected,reimbursed,pending',
+        ]);
+
+        $claim->update([
+            'status' => $request->status,
+            'approved_by' => in_array($request->status, ['approved', 'reimbursed']) ? $request->user()->id : null,
+        ]);
+
+        AuditLog::create([
+            'company_id' => $companyId,
+            'user_id' => $request->user()->id,
+            'user_name' => $request->user()->name,
+            'module' => 'HRM',
+            'action' => 'expense_status_updated',
+            'details' => "Expense '{$claim->title}' for ₦" . number_format($claim->amount, 2) . " marked as {$request->status}",
+            'ip_address' => $request->ip(),
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => "Expense claim status updated to {$request->status}",
+            'data' => $claim->load('employee'),
+        ]);
+    }
+
     public function getPerformanceReviews(Request $request)
     {
         $companyId = $request->user()->company_id;
         $reviews = PerformanceReview::with(['employee.department', 'reviewer'])
             ->where('company_id', $companyId)
+            ->orderBy('id', 'desc')
             ->get();
 
         return response()->json(['success' => true, 'data' => $reviews]);
+    }
+
+    public function storePerformanceReview(Request $request)
+    {
+        $companyId = $request->user()->company_id;
+
+        $validated = $request->validate([
+            'employee_id' => 'required|exists:employees,id',
+            'review_period' => 'required|string',
+            'kpi_score' => 'required|numeric|min:1|max:5',
+            'goals_achievement' => 'required|numeric|min:1|max:5',
+            'manager_feedback' => 'required|string',
+            'promotion_recommendation' => 'boolean',
+        ]);
+
+        $overall = round(($validated['kpi_score'] + $validated['goals_achievement']) / 2, 1);
+
+        $review = PerformanceReview::create([
+            'company_id' => $companyId,
+            'employee_id' => $validated['employee_id'],
+            'reviewer_id' => $request->user()->id,
+            'review_period' => $validated['review_period'],
+            'kpi_score' => $validated['kpi_score'],
+            'goals_achievement' => $validated['goals_achievement'],
+            'overall_score' => $overall,
+            'manager_feedback' => $validated['manager_feedback'],
+            'promotion_recommendation' => $validated['promotion_recommendation'] ?? false,
+            'status' => 'completed',
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Performance review recorded successfully',
+            'data' => $review->load(['employee.department', 'reviewer']),
+        ], 201);
+    }
+
+    public function storeJobOpening(Request $request)
+    {
+        $companyId = $request->user()->company_id;
+
+        $validated = $request->validate([
+            'title' => 'required|string|max:150',
+            'department_id' => 'required|exists:departments,id',
+            'location' => 'required|string',
+            'employment_type' => 'required|string',
+            'min_salary' => 'nullable|numeric|min:0',
+            'max_salary' => 'nullable|numeric|min:0',
+            'openings_count' => 'required|integer|min:1',
+            'description' => 'required|string',
+            'requirements' => 'nullable|string',
+        ]);
+
+        $job = JobOpening::create(array_merge($validated, [
+            'company_id' => $companyId,
+            'status' => 'open',
+        ]));
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Job opening published successfully',
+            'data' => $job->load('department'),
+        ], 201);
     }
 
     public function getTrainings(Request $request)
